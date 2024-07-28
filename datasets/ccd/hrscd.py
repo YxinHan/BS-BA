@@ -22,7 +22,7 @@ class HRSCDatasetCCD(CustomDatasetCCD):
     用于条件 CD 的 HRSCD。
     继承 CustomDatasetCCD 的 evaluate() 函数
     '''
-    CLASSES = ['low', 'mid', 'mid_1', 'high']
+    CLASSES = ['none','low', 'mid', 'high']
     
     def __init__(
         self,
@@ -47,6 +47,7 @@ class HRSCDatasetCCD(CustomDatasetCCD):
         self.split = split
         with open(osp.join(data_root, 'splits', split + '.txt'), 'r') as f:
             sites = [s.strip() for s in f.readlines()]
+
         self.sites = sites
         self.img_suffix = img_suffix
         self.seg_map_suffix = seg_map_suffix
@@ -65,22 +66,23 @@ class HRSCDatasetCCD(CustomDatasetCCD):
     def load_img_infos(self):
         img_infos = []
         for site_pre in self.sites:
-            d = 'D' + site_pre[:2]
+            #print(site_pre)
+           # d = 'D' + site_pre[:2]
 
-            for tile in mmcv.scandir(osp.join(self.img_dir, '2006',  site_pre), recursive=False, suffix=self.img_suffix):
-                splitted = site_pre.split('-')
-                splitted[1] = '2012'
-                site_post = '-'.join(splitted)
-                tile_seg = tile[:-len(self.img_suffix)] + self.seg_map_suffix
-                
-                img_info = dict(
-                    filename=osp.join(self.img_dir, '2012',  site_post, tile),
-                    filename_pre=osp.join(self.img_dir, '2006', site_pre, tile),
-                    ann=dict(seg_map=osp.join(self.ann_dir, '2012',  site_post, tile_seg),
-                                seg_map_pre=osp.join(self.ann_dir, '2006',  site_post, tile_seg), # somehow the files are named with 2012 here as well in the original dataset
-                                seg_map_post=osp.join(self.ann_dir, 'change',  site_post, tile_seg))
-                )
-                img_infos.append(img_info)
+            # for tile in mmcv.scandir(osp.join(self.img_dir, '2006',site_pre+self.img_suffix), recursive=False ,suffix=self.img_suffix):
+            # splitted = site_pre.split('-')
+            # splitted[1] = '2012'
+            # site_post = '-'.join(splitted)
+            # tile_seg = tile[:-len(self.img_suffix)] + self.seg_map_suffix
+            tif = self.img_suffix
+            img_info = dict(
+                filename=osp.join(self.img_dir, '2012',  site_pre+tif),
+                filename_pre=osp.join(self.img_dir, '2006', site_pre+tif),
+                ann=dict(seg_map=osp.join(self.ann_dir,'change' ,  site_pre+ tif),
+                            seg_map_pre=osp.join(self.ann_dir, '2006',  site_pre+tif), # somehow the files are named with 2012 here as well in the original dataset
+                            seg_map_post=osp.join(self.ann_dir, '2012',  site_pre+ tif))
+            )
+            img_infos.append(img_info)
         print_log(f'Loaded {len(img_infos)} image pairs', logger=get_root_logger())
         return img_infos
 
@@ -112,7 +114,7 @@ class HRSCDatasetCCD(CustomDatasetCCD):
         """Get ground truth segmentation maps for evaluation."""
         gt_bc_maps = []
         for img_info in self.img_infos:
-            bc_map_file = img_info['ann']['seg_map']
+            bc_map_file = img_info['ann']['seg_map_post']
             gt_bc_map = mmcv.imread(
                 bc_map_file, flag='unchanged', backend='tifffile')            
             gt_bc_maps.append(gt_bc_map)
@@ -122,14 +124,15 @@ class HRSCDatasetCCD(CustomDatasetCCD):
     def get_gt_sem_maps(self, efficient_test=False):
         gt_sem_maps = []
         for img_info in self.img_infos:
-            seg_map_post = img_info['ann']['seg_map_post']
+            seg_map_post = img_info['ann']['seg_map']
             gt_seg_map_post = mmcv.imread(
                 seg_map_post, flag='unchanged', backend='tifffile')
             # reduce zero label
             # avoid using underflow conversion
-            gt_seg_map_post[gt_seg_map_post == 0] = self.ignore_index_sem
-            gt_seg_map_post = gt_seg_map_post - 1
-            gt_seg_map_post[gt_seg_map_post == self.ignore_index_sem - 1] = self.ignore_index_sem
-            gt_sem_maps.append(gt_seg_map_post.astype(np.uint8))
+            # gt_seg_map_post[gt_seg_map_post == 0] = self.ignore_index_sem
+            # gt_seg_map_post = gt_seg_map_post - 1
+            # gt_seg_map_post[gt_seg_map_post == self.ignore_index_sem - 1] = self.ignore_index_sem
+            gt_sem_maps.append(gt_seg_map_post.astype(np.int64))
+            # print(gt_seg_map_post.max())
 
         return gt_sem_maps

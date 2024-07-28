@@ -587,6 +587,11 @@ class Pad(object):
     There are two padding modes: (1) pad to a fixed size and (2) pad to the
     minimum size that is divisible by some number.
     Added keys are "pad_shape", "pad_fixed_size", "pad_size_divisor",
+    有两种填充模式：（1）填充到固定大小和（2）填充到
+
+    可被某个数整除的最小大小。
+
+    添加的键有“pad_shape”、“pad_fixed_size”、“pad_size_dvisor”，
 
     Args:
         size (tuple, optional): Fixed padding size.
@@ -664,7 +669,7 @@ class Normalize(object):
             default is true.
     """
 
-    def __init__(self, mean, std, to_rgb=True):
+    def __init__(self, mean, std, to_rgb=False):
         self.mean = np.array(mean, dtype=np.float32)
         self.std = np.array(std, dtype=np.float32)
         self.to_rgb = to_rgb
@@ -1324,24 +1329,25 @@ class PhotoMetricDistortion(object):
         """
 
         img = results['img']
-        # random brightness
-        img = self.brightness(img)
-
-        # mode == 0 --> do random contrast first
-        # mode == 1 --> do random contrast last
-        mode = random.randint(2)
-        if mode == 1:
-            img = self.contrast(img)
-
-        # random saturation
-        img = self.saturation(img)
-
-        # random hue
-        img = self.hue(img)
-
-        # random contrast
-        if mode == 0:
-            img = self.contrast(img)
+        #不要这些失真的预处理
+        # # random brightness
+        # img = self.brightness(img)
+        #
+        # # mode == 0 --> do random contrast first
+        # # mode == 1 --> do random contrast last
+        # mode = random.randint(2)
+        # if mode == 1:
+        #     img = self.contrast(img)
+        #
+        # # random saturation
+        # img = self.saturation(img)
+        #
+        # # random hue
+        # img = self.hue(img)
+        #
+        # # random contrast
+        # if mode == 0:
+        #     img = self.contrast(img)
 
         results['img'] = img
         return results

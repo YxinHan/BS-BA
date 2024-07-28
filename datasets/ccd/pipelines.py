@@ -18,7 +18,7 @@ DYNEARTHNET_STD = np.array([654.9196,  727.9036,  872.8431])
 @PIPELINES.register_module()
 class LoadMultipleImages(LoadImagesFromFile):
     def __init__(self,
-                 to_float32=False,
+                 to_float32=True,
                  color_type='color',
                  file_client_args=dict(backend='disk'),
                  imdecode_backend='cv2',
@@ -30,6 +30,7 @@ class LoadMultipleImages(LoadImagesFromFile):
         self.to_imgnet_scale = to_imgnet_scale
         if self.to_imgnet_scale:
             assert mean is not None and std is not None
+        self.to_float32 = to_float32
         self.mean = np.array(mean)
         self.std = np.array(std)
         self.rgb_only = rgb_only
@@ -48,6 +49,7 @@ class LoadMultipleImages(LoadImagesFromFile):
             self.file_client = mmcv.FileClient(**self.file_client_args)
 
         # image pre
+        #print(results['filename_pre'])
         img1_bytes = self.file_client.get(results['img_info']['filename_pre'])
         img1 = mmcv.imfrombytes(
             img1_bytes, flag=self.color_type, backend=self.imdecode_backend)
@@ -216,12 +218,12 @@ class LoadCCDAnnotations(LoadAnnotations):
         # reduce zero_label
         if self.reduce_zero_label:
             # avoid using underflow conversion
-            gt_semantic_seg_post[gt_semantic_seg_post == 0] = 255
-            gt_semantic_seg_post = gt_semantic_seg_post - 1
-            gt_semantic_seg_post[gt_semantic_seg_post == 254] = 255
-            gt_semantic_seg_pre[gt_semantic_seg_pre == 0] = 255
-            gt_semantic_seg_pre = gt_semantic_seg_pre - 1
-            gt_semantic_seg_pre[gt_semantic_seg_pre == 254] = 255
+            gt_semantic_seg_bc[gt_semantic_seg_bc == 0] = 255
+            gt_semantic_seg_bc = gt_semantic_seg_bc - 1
+            gt_semantic_seg_bc[gt_semantic_seg_bc == 254] = 255
+            # gt_semantic_seg_pre[gt_semantic_seg_pre == 0] = 255
+            # gt_semantic_seg_pre = gt_semantic_seg_pre - 1
+            # gt_semantic_seg_pre[gt_semantic_seg_pre == 254] = 255
         if self.map_255_to_1:
             gt_semantic_seg_post[gt_semantic_seg_post != 0] = 1
             gt_semantic_seg_pre[gt_semantic_seg_pre != 0] = 1

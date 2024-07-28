@@ -1,4 +1,4 @@
-
+# Copyright (c) OpenMMLab. All rights reserved.
 from collections.abc import Sequence
 
 import mmcv
@@ -95,13 +95,7 @@ class ImageToTensor(object):
             img = results[key]
             if len(img.shape) < 3:
                 img = np.expand_dims(img, -1)
-                # img = img.float64()
-            if len(img.shape) == 4:
-                print(img.shape)
-                results[key] = to_tensor(img.transpose(3,0,1,2))
-                results[key] = to_tensor(img.transpose(0,3, 1, 2))
-            else:
-                results[key] = to_tensor(img.transpose(2, 0, 1))
+            results[key] = to_tensor(img.transpose(2, 0, 1))
         return results
 
     def __repr__(self):
@@ -255,14 +249,14 @@ class Collect(object):
         keys (Sequence[str]): Keys of results to be collected in ``data``.
         meta_keys (Sequence[str], optional): Meta keys to be converted to
             ``mmcv.DataContainer`` and collected in ``data[img_metas]``.
-            Default: ``('filename', 'ori_filename', 'ori_shape', 'img_shape',
-            'pad_shape', 'scale_factor', 'flip', 'flip_direction',
-            'img_norm_cfg')``
+            Default: (``filename``, ``ori_filename``, ``ori_shape``,
+            ``img_shape``, ``pad_shape``, ``scale_factor``, ``flip``,
+            ``flip_direction``, ``img_norm_cfg``)
     """
 
     def __init__(self,
                  keys,
-                 meta_keys=('filename1', 'filename2', 'ori_filename', 'ori_shape',
+                 meta_keys=('filename', 'ori_filename', 'ori_shape',
                             'img_shape', 'pad_shape', 'scale_factor', 'flip',
                             'flip_direction', 'img_norm_cfg')):
         self.keys = keys

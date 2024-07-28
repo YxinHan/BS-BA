@@ -2,7 +2,7 @@
 from .compose import Compose
 from .formating import (Collect, ImageToTensor, ToDataContainer, ToTensor,
                         Transpose, to_tensor)
-from .loading import LoadAnnotations, LoadImageFromFile, LoadTiffImageFromFile
+from .loading import LoadAnnotations, LoadImageFromFile
 from .test_time_aug import MultiScaleFlipAug
 from .transforms import (AlignedResize, ResizeToMultiple, CLAHE, AdjustGamma, Normalize, Pad,
                          PhotoMetricDistortion, RandomCrop, RandomFlip,
@@ -20,5 +20,5 @@ __all__ = [
     'AdjustGamma', 'CLAHE', 'Rerange', 'RGB2Gray', 'PhotoMetricDistortionMultiImages',
     'ComposeWithVisualization', 'NormalizeMultiImages', 'CLAHEMultiImages',
     'LoadMultipleImages', 'LoadMultipleAnnotations', 'CustomFormatBundle', 'CreateBinaryChangeMask'
-    , 'LoadTiffImageFromFile'
+    
 ]

@@ -5,12 +5,13 @@ import numpy as np
 from mmcv.utils import print_log
 from prettytable import PrettyTable
 
-from mmseg.core import scd_eval_metrics
+from mmseg.core import scd_eval_metrics,cd_eval_metrics
 from ..builder import DATASETS
 from ..custom_cd import CustomDatasetCD
 from ..pipelines import ComposeWithVisualization
+import mmcv
 
-
+from osgeo import gdal
 @DATASETS.register_module()
 class CustomDatasetCCD(CustomDatasetCD):
     '''
@@ -31,7 +32,7 @@ class CustomDatasetCCD(CustomDatasetCD):
                  reduce_zero_label=False,
                  classes=None,
                  palette=None,
-                 if_visualize=False,
+                 if_visualize=True,
                  ):
         self.pipeline = ComposeWithVisualization(pipeline, if_visualize=if_visualize)
         self.img1_dir = img1_dir
@@ -82,9 +83,10 @@ class CustomDatasetCCD(CustomDatasetCD):
         Returns:
             dict[str, float]: Default metrics.
         """
-        gt_bc_maps = self.get_gt_bc_maps(efficient_test)
         gt_sem_maps = self.get_gt_sem_maps(efficient_test)
-
+        gt_bc_maps = self.get_gt_bc_maps(efficient_test)
+        # print(gt_bc_maps,np.amax(gt_bc_maps))
+        # print(gt_sem_maps,np.amax(gt_sem_maps))
         if self.CLASSES is None:
             num_semantic_classes = len(
                 reduce(np.union1d, [np.unique(_) for _ in gt_sem_maps]))
@@ -105,9 +107,13 @@ class CustomDatasetCCD(CustomDatasetCD):
         else:
             class_names = self.CLASSES
 
-        SCD_metrics = ['BC', 'BC_precision', 'BC_recall', 'SC', 'SCS', 'mIoU']
-        summary_table = PrettyTable(field_names=SCD_metrics)
-        summary_table.add_row([np.round(ret_metrics[m], decimals=3) for m in SCD_metrics])
+        BCD_metrics = ['BC_precision', 'BC_recall', 'BC','SC', 'SCS', 'mIoU']
+        summary_table = PrettyTable(field_names=BCD_metrics)
+        summary_table.add_row([np.round(ret_metrics[m], decimals=3) for m in BCD_metrics])
+
+        # SCD_metrics = []
+        # summary_table = PrettyTable(field_names=SCD_metrics)
+        # summary_table.add_row([np.round(ret_metrics[m], decimals=3) for m in SCD_metrics])
 
         print_log('Summary:', logger=logger)
         print_log('\n' + summary_table.get_string(), logger=logger)
@@ -118,5 +124,80 @@ class CustomDatasetCCD(CustomDatasetCD):
 
         print_log('per class results:', logger=logger)
         print_log('\n' + classwise_table.get_string(), logger=logger)
+
+
+
+
+        # img = mmcv.imread(img)  # (h, w, 3)
+        # img = img.copy()
+        # for i in range(len(results)):
+        #     seg_sem = results[i]['bc']
+        #     # seg_bc = results[i]['bc']
+        # # seg = result[0]  # seg.shape=(h, w). The value in the seg represents the index of the palette.
+        #
+        #     palette = np.random.randint(
+        #         0, 255, size=(len(self.CLASSES), 3))
+        #
+        #     palette = np.array(palette)
+        #     assert palette.shape[0] == len(self.CLASSES)
+        #     assert palette.shape[1] == 3
+        #     assert len(palette.shape) == 2
+        #     # assert 0 < opacity <= 1.0
+        #     color_seg = np.zeros((seg_sem.shape[0], seg_sem.shape[1], 3), dtype=np.uint8)  # (h, w, 3). Drawing board.
+        #     for label, color in enumerate(palette):
+        #         color_seg[seg_sem == label,
+        #         :] = color  # seg.shape=(h, w). The value in the seg represents the index of the palette.
+        #     # convert to BGR
+        #     color_seg = color_seg[..., ::-1]
+        #
+        # img = color_seg
+        # img = img.astype(np.uint8)
+        # # if out_file specified, do not show image in window
+        #
+        #
+        # mmcv.imshow(img,'', 0)
+
+
+
+
+            # if dataset is None:
+            #     raise Exception("Unable to open the input TIFF file.")
+
+        for i in range(len(results)):
+            # for site_pre in self.sites:
+                 site = self.sites
+                 seg_sem = results[i]['bc']
+                 # image_array = np.array(seg_sem.GetRasterBand(1).ReadAsArray())
+                 tif = self.img_suffix
+                 path = "./data/HRSCD/res"
+        
+                 output_path = osp.join(path, site[i] + tif)
+        
+                 filename = osp.join(self.img_dir, '2006', site[i] + tif)
+        
+                 # print(filename,output_path)
+        
+                 dataset = gdal.Open(filename, gdal.GA_ReadOnly)
+                 # print(dataset.GetGeoTransform())
+                 image_array = np.array(dataset.GetRasterBand(1).ReadAsArray())
+        # 将像素值限制在 0 到 4 之间
+        #          clamped_array = np.clip(image_array, 0, 1)
+        
+        # 创建一个新的 TIFF 文件
+                 driver = gdal.GetDriverByName("GTiff")
+                 clamped_dataset = driver.Create(output_path,256,256, 1, gdal.GDT_Float32)
+        
+        # 设置地理参考信息
+                 clamped_dataset.SetGeoTransform(dataset.GetGeoTransform())
+                 clamped_dataset.SetProjection(dataset.GetProjection())
+        
+        # 将 NumPy 数组写入新的 TIFF 文件
+                 clamped_dataset.GetRasterBand(1).WriteArray(seg_sem)
+        
+        # 释放资源
+                 dataset = None
+                 clamped_dataset = None
+        # #
+
 
         return ret_metrics

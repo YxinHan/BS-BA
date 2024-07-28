@@ -17,7 +17,7 @@ class ComposeWithVisualization(Compose):
             config dict to be composed.
     """
     
-    def __init__(self, *args, if_visualize=False, save_dir=r'./tmp'):
+    def __init__(self, *args, if_visualize=True, save_dir=r'./tmp'):
         self.if_visualize = if_visualize
         self.save_dir = save_dir
         super().__init__(*args)

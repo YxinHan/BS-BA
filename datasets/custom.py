@@ -1,4 +1,3 @@
-
 import os
 import os.path as osp
 from collections import OrderedDict
@@ -104,6 +103,7 @@ class CustomDataset(Dataset):
         if self.data_root is not None:
             if not osp.isabs(self.img_dir):
                 self.img_dir = osp.join(self.data_root, self.img_dir)
+                # print(img_dir)
             if not (self.ann_dir is None or osp.isabs(self.ann_dir)):
                 self.ann_dir = osp.join(self.data_root, self.ann_dir)
             if not (self.split is None or osp.isabs(self.split)):
